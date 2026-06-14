@@ -7,6 +7,11 @@ import Foundation
 /// words, giving an early sense of success.
 enum Curriculum {
 
+    /// How many items make up one short "set" before a brain break.
+    /// Deliberately small so a distractible learner always has a finish line
+    /// in sight and a built-in stopping point.
+    static let setSize = 5
+
     /// Letter sounds in teaching order.
     static let phonemes: [Phoneme] = [
         Phoneme(id: "s", letter: "s", exampleWord: "sun",      emoji: "☀️", respelling: "sss"),

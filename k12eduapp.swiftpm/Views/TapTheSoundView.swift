@@ -4,13 +4,23 @@ import SwiftUI
 /// The app plays a sound; the child taps the matching letter from a small set
 /// of choices. Wrong taps are gentle: the tile softly highlights, then the
 /// round resets so they can try again — never a hard "fail".
+///
+/// ADHD supports: short sets with a visible finish line, varied praise, and a
+/// movement "brain break" between sets.
 struct TapTheSoundView: View {
     @Environment(ProgressStore.self) private var progress
+    @Environment(\.dismiss) private var dismiss
 
     @State private var target: Phoneme?
     @State private var options: [Phoneme] = []
     @State private var selectedID: String?
+    @State private var completedInSet = 0
+    @State private var starsInSet = 0
     @State private var showStar = false
+    @State private var showBreak = false
+    @State private var cheer = ""
+
+    private let setSize = Curriculum.setSize
 
     private var pool: [Phoneme] {
         Curriculum.phonemes.filter { Curriculum.starterSoundGameIDs.contains($0.id) }
@@ -19,7 +29,9 @@ struct TapTheSoundView: View {
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
-            VStack(spacing: 36) {
+            VStack(spacing: 32) {
+                ProgressDots(total: setSize, completed: completedInSet)
+                    .padding(.top, 8)
                 Spacer()
                 playButton
                 Text("Which letter makes that sound?")
@@ -34,7 +46,14 @@ struct TapTheSoundView: View {
             .frame(maxWidth: .infinity)
 
             if showStar {
-                CelebrationView(message: "You got it!").transition(.opacity)
+                CelebrationView(message: cheer).transition(.opacity)
+            }
+            if showBreak {
+                BrainBreakView(starsThisSet: starsInSet,
+                               prompt: Praise.movementBreak(),
+                               onKeepGoing: startNextSet,
+                               onDone: { dismiss() })
+                    .transition(.opacity)
             }
         }
         .navigationTitle("Tap the Sound")
@@ -91,11 +110,18 @@ struct TapTheSoundView: View {
         if option.id == target?.id {
             selectedID = option.id
             progress.markPhonemeMastered(option.id)
+            completedInSet += 1
+            starsInSet += 1
+            cheer = Praise.cheer()
             Haptics.success()
             withAnimation { showStar = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                 withAnimation { showStar = false }
-                newRound()
+                if completedInSet >= setSize {
+                    withAnimation { showBreak = true }
+                } else {
+                    newRound()
+                }
             }
         } else {
             selectedID = option.id
@@ -105,6 +131,13 @@ struct TapTheSoundView: View {
                 withAnimation { selectedID = nil }
             }
         }
+    }
+
+    private func startNextSet() {
+        completedInSet = 0
+        starsInSet = 0
+        withAnimation { showBreak = false }
+        newRound()
     }
 
     private func newRound() {

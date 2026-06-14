@@ -3,20 +3,30 @@ import SwiftUI
 /// Activity 1 — Letter Sounds.
 /// One letter at a time. Tap the letter to hear its sound; tap the picture to
 /// hear an example word. "I got it!" awards a star and moves on.
+///
+/// ADHD supports: a short spoken instruction, a visible finish line (dots),
+/// work in small sets, and a movement "brain break" after each set.
 struct LetterSoundsView: View {
     @Environment(ProgressStore.self) private var progress
+    @Environment(\.dismiss) private var dismiss
+
     @State private var index = 0
+    @State private var completedInSet = 0
+    @State private var starsInSet = 0
     @State private var showStar = false
+    @State private var showBreak = false
+    @State private var cheer = ""
 
     private let phonemes = Curriculum.phonemes
+    private let setSize = Curriculum.setSize
     private var current: Phoneme { phonemes[index] }
 
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
-            VStack(spacing: 28) {
-                ProgressView(value: Double(index + 1), total: Double(phonemes.count))
-                    .tint(Theme.primary)
+            VStack(spacing: 24) {
+                ProgressDots(total: setSize, completed: completedInSet)
+                    .padding(.top, 8)
 
                 Spacer()
                 letterCard
@@ -31,12 +41,21 @@ struct LetterSoundsView: View {
             .frame(maxWidth: .infinity)
 
             if showStar {
-                CelebrationView(message: "Nice!").transition(.opacity)
+                CelebrationView(message: cheer).transition(.opacity)
+            }
+            if showBreak {
+                BrainBreakView(starsThisSet: starsInSet,
+                               prompt: Praise.movementBreak(),
+                               onKeepGoing: startNextSet,
+                               onDone: { dismiss() })
+                    .transition(.opacity)
             }
         }
         .navigationTitle("Letter Sounds")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { speakCurrent() }
+        .onAppear {
+            SpeechService.shared.say("Tap a letter to hear its sound.")
+        }
     }
 
     private var letterCard: some View {
@@ -76,15 +95,7 @@ struct LetterSoundsView: View {
                 speakCurrent()
             }
 
-            Button {
-                progress.markPhonemeMastered(current.id)
-                Haptics.success()
-                withAnimation { showStar = true }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                    withAnimation { showStar = false }
-                    advance()
-                }
-            } label: {
+            Button(action: gotIt) {
                 Text("I got it! ⭐️")
                     .font(Theme.rounded(24))
                     .foregroundStyle(.white)
@@ -110,6 +121,31 @@ struct LetterSoundsView: View {
         }
         .buttonStyle(.plain)
         .disabled(disabled)
+    }
+
+    private func gotIt() {
+        progress.markPhonemeMastered(current.id)
+        completedInSet += 1
+        starsInSet += 1
+        cheer = Praise.cheer()
+        SpeechService.shared.say(cheer)
+        Haptics.success()
+        withAnimation { showStar = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            withAnimation { showStar = false }
+            if completedInSet >= setSize {
+                withAnimation { showBreak = true }
+            } else {
+                advance()
+            }
+        }
+    }
+
+    private func startNextSet() {
+        completedInSet = 0
+        starsInSet = 0
+        withAnimation { showBreak = false }
+        advance()
     }
 
     private func advance() {

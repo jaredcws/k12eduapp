@@ -4,21 +4,31 @@ import SwiftUI
 /// The heart of phonics: blending. The child taps each letter to hear its
 /// sound, then "Blend it!" sounds the word out letter-by-letter and finally
 /// says the whole word while revealing the picture.
+///
+/// ADHD supports: short sets with a visible finish line, a spoken instruction,
+/// and a movement "brain break" after each set.
 struct BlendingView: View {
     @Environment(ProgressStore.self) private var progress
+    @Environment(\.dismiss) private var dismiss
 
     @State private var index = 0
     @State private var revealed = false
     @State private var highlightedLetter: Int?
+    @State private var completedInSet = 0
+    @State private var starsInSet = 0
     @State private var showStar = false
+    @State private var showBreak = false
 
     private let words = Curriculum.words
+    private let setSize = Curriculum.setSize
     private var current: CVCWord { words[index] }
 
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
-            VStack(spacing: 32) {
+            VStack(spacing: 28) {
+                ProgressDots(total: setSize, completed: completedInSet)
+                    .padding(.top, 8)
                 Spacer()
 
                 Text(revealed ? current.emoji : "❓")
@@ -38,9 +48,19 @@ struct BlendingView: View {
             if showStar {
                 CelebrationView(message: "\(current.text.uppercased())!").transition(.opacity)
             }
+            if showBreak {
+                BrainBreakView(starsThisSet: starsInSet,
+                               prompt: Praise.movementBreak(),
+                               onKeepGoing: startNextSet,
+                               onDone: { dismiss() })
+                    .transition(.opacity)
+            }
         }
         .navigationTitle("Build a Word")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            SpeechService.shared.say("Tap each letter, then press Blend it.")
+        }
     }
 
     private var letters: some View {
@@ -115,13 +135,28 @@ struct BlendingView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + finish) {
             highlightedLetter = nil
             SpeechService.shared.playWord(current.text)
+            let isNew = !progress.builtWords.contains(current.text)
             progress.markWordBuilt(current.text)
+            if isNew {
+                completedInSet += 1
+                starsInSet += 1
+            }
             Haptics.success()
             withAnimation { showStar = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
                 withAnimation { showStar = false }
+                if completedInSet >= setSize {
+                    withAnimation { showBreak = true }
+                }
             }
         }
+    }
+
+    private func startNextSet() {
+        completedInSet = 0
+        starsInSet = 0
+        withAnimation { showBreak = false }
+        next()
     }
 
     private func next() {
