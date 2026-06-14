@@ -14,6 +14,7 @@ struct HomeView: View {
                 ScrollView {
                     VStack(spacing: 28) {
                         header
+                        rewardBar
                         activities
                     }
                     .padding(28)
@@ -55,6 +56,45 @@ struct HomeView: View {
             }
         }
         .padding(.top, 12)
+    }
+
+    /// Tappable reward bar showing progress toward the next sticker.
+    private var rewardBar: some View {
+        NavigationLink {
+            StickerBookView()
+        } label: {
+            HStack(spacing: 16) {
+                Text("🏅").font(.system(size: 40))
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Sticker Book")
+                        .font(Theme.rounded(22))
+                        .foregroundStyle(Theme.ink)
+                    if progress.hasMoreStickers {
+                        ProgressView(value: Double(progress.starsTowardNextSticker),
+                                     total: Double(ProgressStore.starsPerSticker))
+                            .tint(Theme.accent)
+                        Text("\(ProgressStore.starsPerSticker - progress.starsTowardNextSticker) ⭐️ to your next sticker")
+                            .font(Theme.rounded(14, weight: .medium))
+                            .foregroundStyle(Theme.ink.opacity(0.6))
+                    } else {
+                        Text("All stickers collected! 🎉")
+                            .font(Theme.rounded(14, weight: .medium))
+                            .foregroundStyle(Theme.correct)
+                    }
+                }
+                Spacer()
+                Text("\(progress.unlockedStickerCount)/\(Curriculum.stickers.count)")
+                    .font(Theme.rounded(18))
+                    .foregroundStyle(Theme.ink.opacity(0.7))
+            }
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(.white)
+                    .shadow(color: .black.opacity(0.08), radius: 8, y: 4)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private var activities: some View {

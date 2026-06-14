@@ -20,7 +20,7 @@ struct TapTheSoundView: View {
     @State private var showBreak = false
     @State private var cheer = ""
 
-    private let setSize = Curriculum.setSize
+    private var setSize: Int { progress.setSize }
 
     private var pool: [Phoneme] {
         Curriculum.phonemes.filter { Curriculum.starterSoundGameIDs.contains($0.id) }
@@ -46,7 +46,7 @@ struct TapTheSoundView: View {
             .frame(maxWidth: .infinity)
 
             if showStar {
-                CelebrationView(message: cheer).transition(.opacity)
+                CelebrationView(message: cheer, calm: progress.calmMode).transition(.opacity)
             }
             if showBreak {
                 BrainBreakView(starsThisSet: starsInSet,

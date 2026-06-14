@@ -7,10 +7,19 @@ import Foundation
 /// words, giving an early sense of success.
 enum Curriculum {
 
-    /// How many items make up one short "set" before a brain break.
-    /// Deliberately small so a distractible learner always has a finish line
-    /// in sight and a built-in stopping point.
-    static let setSize = 5
+    /// Default items per short "set" before a brain break. Deliberately small
+    /// so a distractible learner always has a finish line in sight. The parent
+    /// can adjust this between `minSetSize` and `maxSetSize` in Settings.
+    static let defaultSetSize = 5
+    static let minSetSize = 3
+    static let maxSetSize = 8
+
+    /// Collectible sticker rewards, unlocked one at a time as stars add up.
+    /// A longer-term goal beyond the per-tap stars helps sustain motivation.
+    static let stickers = [
+        "🦖", "🚀", "🦄", "🐙", "🌈", "🦊",
+        "🐢", "🦋", "🍩", "⚽️", "🎸", "🐳"
+    ]
 
     /// Letter sounds in teaching order.
     static let phonemes: [Phoneme] = [

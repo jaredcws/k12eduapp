@@ -18,7 +18,7 @@ struct LetterSoundsView: View {
     @State private var cheer = ""
 
     private let phonemes = Curriculum.phonemes
-    private let setSize = Curriculum.setSize
+    private var setSize: Int { progress.setSize }
     private var current: Phoneme { phonemes[index] }
 
     var body: some View {
@@ -41,7 +41,7 @@ struct LetterSoundsView: View {
             .frame(maxWidth: .infinity)
 
             if showStar {
-                CelebrationView(message: cheer).transition(.opacity)
+                CelebrationView(message: cheer, calm: progress.calmMode).transition(.opacity)
             }
             if showBreak {
                 BrainBreakView(starsThisSet: starsInSet,
@@ -128,7 +128,7 @@ struct LetterSoundsView: View {
         completedInSet += 1
         starsInSet += 1
         cheer = Praise.cheer()
-        SpeechService.shared.say(cheer)
+        if !progress.calmMode { SpeechService.shared.say(cheer) }
         Haptics.success()
         withAnimation { showStar = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {

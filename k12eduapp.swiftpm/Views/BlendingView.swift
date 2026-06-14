@@ -20,7 +20,7 @@ struct BlendingView: View {
     @State private var showBreak = false
 
     private let words = Curriculum.words
-    private let setSize = Curriculum.setSize
+    private var setSize: Int { progress.setSize }
     private var current: CVCWord { words[index] }
 
     var body: some View {
@@ -46,7 +46,8 @@ struct BlendingView: View {
             .frame(maxWidth: .infinity)
 
             if showStar {
-                CelebrationView(message: "\(current.text.uppercased())!").transition(.opacity)
+                CelebrationView(message: "\(current.text.uppercased())!", calm: progress.calmMode)
+                    .transition(.opacity)
             }
             if showBreak {
                 BrainBreakView(starsThisSet: starsInSet,

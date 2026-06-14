@@ -13,6 +13,16 @@ struct SettingsView: View {
                     TextField("Child's name", text: $progress.childName)
                         .font(Theme.rounded(20, weight: .medium))
                 }
+                Section {
+                    Toggle("Calm Mode", isOn: $progress.calmMode)
+                    Stepper("Activities per set: \(progress.setSize)",
+                            value: $progress.setSize,
+                            in: Curriculum.minSetSize...Curriculum.maxSetSize)
+                } header: {
+                    Text("Focus & comfort")
+                } footer: {
+                    Text("Calm Mode softens celebrations and reduces sounds for sensitive days. A smaller set means more frequent brain breaks.")
+                }
                 Section("Progress") {
                     LabeledContent("Stars earned", value: "\(progress.totalStars)")
                     LabeledContent("Sounds learned", value: "\(progress.masteredPhonemes.count)")
